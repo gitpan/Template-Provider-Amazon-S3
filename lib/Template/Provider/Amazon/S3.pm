@@ -1,6 +1,6 @@
 package Template::Provider::Amazon::S3;
 {
-  $Template::Provider::Amazon::S3::VERSION = '0.001';
+  $Template::Provider::Amazon::S3::VERSION = '0.002';
 }
 # ABSTRACT: Enable template toolkit to use Amazon's S3 service as a provier of templates.
 use base 'Template::Provider';
@@ -87,14 +87,11 @@ sub _template_content {
    return wantarray? (undef, 'No path specified to fetch content from')   : undef unless $template;
    return wantarray? (undef, 'No Bucket specified to fetch content from') : undef unless $self->bucket;
    my $object; 
-   {
-      local $@;
-      eval{
-        $DB::signal=1;
+   try {
         $object = $self->object( key => $template );
-      };
-      return wantarray? (undef, 'AWS error: '.$@ ) : undef if $@; 
-   }
+   } catch {
+      return wantarray? (undef, 'AWS error: '.$_ ) : undef;
+   };
 
    return wantarray? (undef, "object ($template) not found") : undef 
        unless $object && $object->exists;
@@ -117,7 +114,7 @@ Template::Provider::Amazon::S3 - Enable template toolkit to use Amazon's S3 serv
 
 =head1 VERSION
 
-version 0.001
+version 0.002
 
 =head1 SYNOPSIS
 
@@ -164,10 +161,15 @@ version 0.001
 =over 2
 
 =item fetch()
+
 =item store()
+
 =item load()
+
 =item include_path()
+
 =item paths()
+
 =item DESTROY()
 
 =back
@@ -209,7 +211,9 @@ better use of the INCLUDE_PATH.
 =over 4 
 
 =item L<Net::Amazon::S3::Client>
+
 =item L<Net::Amazon::S3::Client::Bucket>
+
 =item L<Net::Amazon::S3::Client::Object>
 
 =back
