@@ -1,0 +1,26 @@
+---
+abstract: "Enable template toolkit to use Amazon's S3 service as a provier of templates."
+author:
+  - 'Gautam Dey <gdey@cpan.org>'
+build_requires:
+  Data::Dumper: 0
+  Test::Exception: 0
+  Test::More: 0
+  strict: 0
+  warnings: 0
+configure_requires:
+  ExtUtils::MakeMaker: 6.30
+dynamic_config: 0
+generated_by: 'Dist::Zilla version 4.300007, CPAN::Meta::Converter version 2.120351'
+license: perl
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Template-Provider-Amazon-S3
+requires:
+  DateTime: 0
+  Net::Amazon::S3::Client: 0
+  Template::Provider: 0
+  Try::Tiny: 0
+  base: 0
+version: 0.001
