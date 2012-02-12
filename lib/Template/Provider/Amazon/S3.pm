@@ -1,6 +1,6 @@
 package Template::Provider::Amazon::S3;
 {
-  $Template::Provider::Amazon::S3::VERSION = '0.002';
+  $Template::Provider::Amazon::S3::VERSION = '0.003';
 }
 # ABSTRACT: Enable template toolkit to use Amazon's S3 service as a provier of templates.
 use base 'Template::Provider';
@@ -10,7 +10,8 @@ use base 'Template::Provider';
 use Net::Amazon::S3::Client;
 use DateTime;
 use Try::Tiny;
-
+use List::MoreUtils qw( uniq );
+use feature 'say';
 
 
 
@@ -46,21 +47,48 @@ sub cache {
 }
 
 
+sub _clean_up_path($) { join '/', grep { $_!~/\.{1,2}/ } split '/', shift };
+
+sub _get_paths {
+    my $self = shift;
+    my $key = shift;
+    my @paths = grep { defined } map { /^\s*$/ ? undef : $_  } uniq 
+                map { _clean_up_path $_ } ('', @{$self->include_path} );
+    return ( $key , map { join '/',$_,$key } @paths ) 
+}
+   
 sub object {
+
    my ($self, %args) = @_;
    my $key = $args{key};
    return unless $key;
-   my $obj = $self->cache( $key );
-   return $obj if $obj;
+   my @paths = $self->_get_paths($key);
+
+
+   foreach my $path_key ( @paths ) {
+       say "# Looking for $path_key";
+       $obj = $self->cache( $path_key );
+       return $obj if $obj;
+   }
    my $bucket = $self->bucket;
    return unless $bucket;
-   $self->cache( $key => $bucket->object( key => $key ) );
+   my $stream = $bucket->list;
+   until ( $stream->is_done ){
+      foreach $object ( $stream->items ) {
+         $self->cache( $object->key => $object );
+      }
+   }
+   foreach my $path_key ( @paths ) {
+       $obj = $self->cache( $path_key );
+       return $obj if $obj;
+   }
+   return;
 }
 
 sub _init {
   my ( $self, $options ) = @_;
   $self->{ AWS_ACCESS_KEY_ID } = $options->{ key }          || $ENV{AWS_ACCESS_KEY_ID};
-  $self->{ AWS_SECRET_ACCESS_KEY } = $options->{ secrete }  || $ENV{AWS_ACCESS_KEY_SECRET};
+  $self->{ AWS_SECRET_ACCESS_KEY } = $options->{ secret } || $options->{ secrete } || $ENV{AWS_ACCESS_KEY_SECRET};
   $self->{ BUCKETNAME } = $options->{ bucketname }          || $ENV{AWS_TEMPLATE_BUCKET};
   $self->SUPER::_init($options);
 }
@@ -68,7 +96,6 @@ sub _init {
 sub _template_modified {
    my ($self, $template) = @_;
    $template =~s#^\./##;
-   
    my $object;
    try {
       $object = $self->object( key => $template );
@@ -81,25 +108,22 @@ sub _template_modified {
 }
 
 sub _template_content {
-
    my ($self, $template) = @_;
    $template =~s#^\./##;
    return wantarray? (undef, 'No path specified to fetch content from')   : undef unless $template;
    return wantarray? (undef, 'No Bucket specified to fetch content from') : undef unless $self->bucket;
    my $object; 
    try {
-        $object = $self->object( key => $template );
+      $object = $self->object( key => $template );
    } catch {
       return wantarray? (undef, 'AWS error: '.$_ ) : undef;
    };
-
    return wantarray? (undef, "object ($template) not found") : undef 
        unless $object && $object->exists;
    my $data = $object->get;
    my $ldate = $object->last_modified || DateTime->now;
    $mod_date = $ldate->epoch;
    return wantarray? ($data, undef, $mod_date) : $data;
-
 }
 
 
@@ -114,7 +138,7 @@ Template::Provider::Amazon::S3 - Enable template toolkit to use Amazon's S3 serv
 
 =head1 VERSION
 
-version 0.002
+version 0.003
 
 =head1 SYNOPSIS
 
@@ -130,7 +154,7 @@ version 0.002
    #  AWS_TEMPLATE_BUCKET
    my $tt_config = {
        LOAD_TEMPLATES => [
-         Template::Provider::Amazon::S3->new()
+         Template::Provider::Amazon::S3->new( INCLUDE_PATH => [ 'dir1', 'dir2' ] )
        ]
    };
 
@@ -189,7 +213,7 @@ version 0.002
   This is the Amazon Access key, if this is not provided we will try
   and load this from the AWS_ACCESS_KEY_ID environment variable.
 
-=item B<secrete>
+=item B<secret>
 
   This is the Amazon Secret Key, if this is not provided we will try
   and load this from the AWS_ACCESS_KEY_SECRET environment variable.
@@ -200,11 +224,18 @@ version 0.002
   not provided we will try and get it from the AWS_TEMPLATE_BUCKET 
   envrionement variable. 
 
+=item B<INCLUDE_PATH>
+
+  This should be an array ref to directories that will be searched for the
+  template. This method is really naive, and just prepends each entry to 
+  the template name. 
+
 =back
 
-Note do not use the RELATIVE or the ABSOLUTE parameters, I don't know
-what will happen if they are used. This is a TODO, as well as make 
-better use of the INCLUDE_PATH.
+=head2 Note
+
+  Note do not use the RELATIVE or the ABSOLUTE parameters, I don't know 
+  what will happen if they are used. 
 
 =head1 SEE ALSO
 

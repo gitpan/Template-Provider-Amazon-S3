@@ -9,7 +9,8 @@ lib/Template/Provider/Amazon/S3.pm
 t/00.load.t
 t/01.pod.t
 t/01_loadtemplate.t
-t/blue/helloworld.tt
-t/helloworld.tt
-t/layout/html_wrapper.tt
-t/wrapped_content.tt
+t/02_loadtemplate.t
+t/templates/blue/helloworld.tt
+t/templates/helloworld.tt
+t/templates/layout/html_wrapper.tt
+t/templates/wrapped_content.tt

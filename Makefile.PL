@@ -27,12 +27,14 @@ my %WriteMakefileArgs = (
   "NAME" => "Template::Provider::Amazon::S3",
   "PREREQ_PM" => {
     "DateTime" => 0,
+    "List::MoreUtils" => 0,
     "Net::Amazon::S3::Client" => 0,
     "Template::Provider" => 0,
     "Try::Tiny" => 0,
-    "base" => 0
+    "base" => 0,
+    "feature" => 0
   },
-  "VERSION" => "0.002",
+  "VERSION" => "0.003",
   "test" => {
     "TESTS" => "t/*.t"
   }

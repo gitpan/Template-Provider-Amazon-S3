@@ -19,8 +19,10 @@ meta-spec:
 name: Template-Provider-Amazon-S3
 requires:
   DateTime: 0
+  List::MoreUtils: 0
   Net::Amazon::S3::Client: 0
   Template::Provider: 0
   Try::Tiny: 0
   base: 0
-version: 0.002
+  feature: 0
+version: 0.003
