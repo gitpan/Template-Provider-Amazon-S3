@@ -1,6 +1,6 @@
 package Template::Provider::Amazon::S3;
 {
-  $Template::Provider::Amazon::S3::VERSION = '0.003';
+  $Template::Provider::Amazon::S3::VERSION = '0.004';
 }
 # ABSTRACT: Enable template toolkit to use Amazon's S3 service as a provier of templates.
 use base 'Template::Provider';
@@ -11,7 +11,6 @@ use Net::Amazon::S3::Client;
 use DateTime;
 use Try::Tiny;
 use List::MoreUtils qw( uniq );
-use feature 'say';
 
 
 
@@ -47,29 +46,10 @@ sub cache {
 }
 
 
-sub _clean_up_path($) { join '/', grep { $_!~/\.{1,2}/ } split '/', shift };
+sub refresh_cache {
 
-sub _get_paths {
-    my $self = shift;
-    my $key = shift;
-    my @paths = grep { defined } map { /^\s*$/ ? undef : $_  } uniq 
-                map { _clean_up_path $_ } ('', @{$self->include_path} );
-    return ( $key , map { join '/',$_,$key } @paths ) 
-}
-   
-sub object {
-
-   my ($self, %args) = @_;
-   my $key = $args{key};
-   return unless $key;
-   my @paths = $self->_get_paths($key);
-
-
-   foreach my $path_key ( @paths ) {
-       say "# Looking for $path_key";
-       $obj = $self->cache( $path_key );
-       return $obj if $obj;
-   }
+   my $self = shift;
+   my $key = shift;
    my $bucket = $self->bucket;
    return unless $bucket;
    my $stream = $bucket->list;
@@ -78,11 +58,36 @@ sub object {
          $self->cache( $object->key => $object );
       }
    }
+   return unless $key and defined wantarray ;
+   my @paths = $self->_get_paths($key);
    foreach my $path_key ( @paths ) {
        $obj = $self->cache( $path_key );
        return $obj if $obj;
    }
    return;
+}
+
+
+sub _clean_up_path($) { join '/', grep { $_!~/\.{1,2}/ } split '/', shift };
+
+sub _get_paths {
+    my $self = shift;
+    my $key = shift;
+    my @paths = grep { defined } map { /^\s*$/ ? undef : $_  } uniq 
+                 map { _clean_up_path $_ } ('', @{$self->include_path} );
+    return ( $key , map { join '/',$_,$key } @paths ) 
+}
+   
+sub object {
+   my ($self, %args) = @_;
+   my $key = $args{key};
+   return unless $key;
+   my @paths = $self->_get_paths($key);
+   foreach my $path_key ( @paths ) {
+       $obj = $self->cache( $path_key );
+       return $obj if $obj;
+   }
+   return $self->refresh_cache( $key );
 }
 
 sub _init {
@@ -138,7 +143,7 @@ Template::Provider::Amazon::S3 - Enable template toolkit to use Amazon's S3 serv
 
 =head1 VERSION
 
-version 0.003
+version 0.004
 
 =head1 SYNOPSIS
 
@@ -170,6 +175,10 @@ version 0.003
 =head2 bucket
 
    This method will return the bucket that was configure in the begining.
+
+=head2 refresh_cache
+
+  Call this method to refresh the in memory store.
 
 =head2 object
 
