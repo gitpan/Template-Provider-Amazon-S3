@@ -24,4 +24,4 @@ requires:
   Template::Provider: 0
   Try::Tiny: 0
   base: 0
-version: 0.004
+version: 0.005
