@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 
-
+use 5.010000;
 
 use ExtUtils::MakeMaker 6.30;
 
@@ -14,9 +14,7 @@ my %WriteMakefileArgs = (
   "BUILD_REQUIRES" => {
     "Data::Dumper" => 0,
     "Test::Exception" => 0,
-    "Test::More" => 0,
-    "strict" => 0,
-    "warnings" => 0
+    "Test::More" => 0
   },
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.30"
@@ -26,14 +24,19 @@ my %WriteMakefileArgs = (
   "LICENSE" => "perl",
   "NAME" => "Template::Provider::Amazon::S3",
   "PREREQ_PM" => {
+    "CHI" => "0.50",
     "DateTime" => 0,
+    "JSON" => 0,
     "List::MoreUtils" => 0,
     "Net::Amazon::S3::Client" => 0,
     "Template::Provider" => 0,
     "Try::Tiny" => 0,
-    "base" => 0
+    "base" => 0,
+    "feature" => 0,
+    "strict" => 0,
+    "warnings" => 0
   },
-  "VERSION" => "0.005",
+  "VERSION" => "0.006",
   "test" => {
     "TESTS" => "t/*.t"
   }
