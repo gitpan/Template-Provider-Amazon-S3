@@ -12,7 +12,7 @@ my %WriteMakefileArgs = (
   "ABSTRACT" => "Enable template toolkit to use Amazon's S3 service as a provier of templates.",
   "AUTHOR" => "Gautam Dey <gdey\@cpan.org>",
   "BUILD_REQUIRES" => {
-    "Data::Dumper" => 0,
+    "Digest::SHA1" => 0,
     "Test::Exception" => 0,
     "Test::More" => 0
   },
@@ -25,6 +25,7 @@ my %WriteMakefileArgs = (
   "NAME" => "Template::Provider::Amazon::S3",
   "PREREQ_PM" => {
     "CHI" => "0.50",
+    "Data::Dumper" => 0,
     "DateTime" => 0,
     "JSON" => 0,
     "List::MoreUtils" => 0,
@@ -36,7 +37,7 @@ my %WriteMakefileArgs = (
     "strict" => 0,
     "warnings" => 0
   },
-  "VERSION" => "0.006",
+  "VERSION" => "0.007",
   "test" => {
     "TESTS" => "t/*.t"
   }

@@ -3,7 +3,7 @@ abstract: "Enable template toolkit to use Amazon's S3 service as a provier of te
 author:
   - 'Gautam Dey <gdey@cpan.org>'
 build_requires:
-  Data::Dumper: 0
+  Digest::SHA1: 0
   Test::Exception: 0
   Test::More: 0
 configure_requires:
@@ -17,6 +17,7 @@ meta-spec:
 name: Template-Provider-Amazon-S3
 requires:
   CHI: 0.50
+  Data::Dumper: 0
   DateTime: 0
   JSON: 0
   List::MoreUtils: 0
@@ -28,4 +29,4 @@ requires:
   perl: 5.10.0
   strict: 0
   warnings: 0
-version: 0.006
+version: 0.007
