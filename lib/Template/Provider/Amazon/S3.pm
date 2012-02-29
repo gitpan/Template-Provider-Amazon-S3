@@ -5,7 +5,7 @@ use warnings;
 
 package Template::Provider::Amazon::S3;
 {
-  $Template::Provider::Amazon::S3::VERSION = '0.007';
+  $Template::Provider::Amazon::S3::VERSION = '0.008';
 }
 
 # ABSTRACT: Enable template toolkit to use Amazon's S3 service as a provier of templates.
@@ -53,7 +53,7 @@ sub _init {
     $cache_opts ||= { driver => 'RawMemory', global => 1 };
     $self->{CACHE_OPTIONS} = $cache_opts;
 
-    $self->refresh_cache;
+    #$self->refresh_cache;
     $self->SUPER::_init($options);
 }
 
@@ -104,6 +104,12 @@ use Data::Dumper;
         return $cache;
     }
 
+    sub set_cache {
+       my ( $self, $key, $obj ) = @_;
+       $self->cache->set( $key, $obj, $self->{REFRESH_IN_SECONDS} );
+       return $self;
+    }
+
     sub refresh_cache {
 
         my $self   = shift;
@@ -118,46 +124,43 @@ use Data::Dumper;
 
                my $exists = !!$object->exists;
                my $ldate = $object->last_modified || $today;
-               if( !$exists ){ 
-                  $self->cache->set( $object->key,  { 
+               my $obj_key = $object->key;
+               my $cobj = $self->cache->get( $obj_key );
+               my $stash = {
                          last_modified => $ldate->epoch,
-                         template_name => $object->key,
+                         template_name => $key,
                        template_exists => $exists,
-                     },
-                     $self->{REFRESH_IN_SECONDS},
-                  );
-                  next;
                };
+
+               # This means there is no reason the update the cache. So, leave it be.
+               next if ( $cobj and ( $ldate->epoch <= ($cobj->{last_modified} + 0)) ); 
+
                # try {
-                    my $data = $object->get;
-                    $self->cache->set( $object->key,  { 
-                         last_modified => $ldate->epoch,
-                         template_name => $object->key,
-                              template => $data,
-                       template_exists => $exists,
-                    });
+               if( $key && $exists && $key eq $obj_key ){
+                  my $data = $object->get;
+                  $stash->{template} = $data;
+               }
                # } catch {
                     #warn "Could not get template '".$object->key."' with error $_ ";
                # };
+
+               $self->set_cache( $obj_key, $stash );
                
             };
             $self->_set_last_refresh;
         }
-        return $self->_get_object( key => $key );
+        return $self->_get_object( key => $key ) if $key;
     }
 
 }
 
 
-sub _clean_up_path($) {
-    join '/', grep { $_ !~ /\.{1,2}/ } split '/', shift;
-}
-
+sub _clean_up_path($) { join '/', grep { $_ !~ /\.{1,2}/ } split '/', shift; }
 sub _get_paths {
-    my $self  = shift;
-    my $key   = shift;
-    my @paths = grep { defined } map { /^\s*$/ ? undef : $_ } uniq
-      map { _clean_up_path $_ } ( '', @{ $self->include_path } );
+    my ($self,$key)  = @_;
+    my @paths = grep { defined } 
+                map { /^\s*$/ ? undef : $_ } uniq
+                map { _clean_up_path $_ } ( '', @{ $self->include_path } );
     return ( $key, map { join '/', $_, $key } @paths );
 }
 
@@ -168,7 +171,18 @@ sub _get_object {
     my @paths = $self->_get_paths($key);
     foreach my $path_key (@paths) {
         my $obj = $self->cache->get($path_key);
-        return $obj if $obj;
+        next unless $obj;
+        my $template = $obj->{template};
+        my $exists  = $obj->{template_exists};
+
+        if( $exists && !$template ){
+          # We need to download and store the template.
+          my $s3_obj = $self->bucket->object( key => $key );
+          my $s3_template = $s3_obj->get;
+          $obj->{template} = $s3_template;
+          $self->set_cache( $key => $obj );
+        };
+        return $obj;
     }
     #warn "did not find the $key ";
     return;
@@ -239,7 +253,7 @@ Template::Provider::Amazon::S3 - Enable template toolkit to use Amazon's S3 serv
 
 =head1 VERSION
 
-version 0.007
+version 0.008
 
 =head1 SYNOPSIS
 
