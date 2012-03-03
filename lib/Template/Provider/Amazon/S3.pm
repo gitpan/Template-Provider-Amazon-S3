@@ -5,7 +5,7 @@ use warnings;
 
 package Template::Provider::Amazon::S3;
 {
-  $Template::Provider::Amazon::S3::VERSION = '0.008';
+  $Template::Provider::Amazon::S3::VERSION = '0.009';
 }
 
 # ABSTRACT: Enable template toolkit to use Amazon's S3 service as a provier of templates.
@@ -114,7 +114,6 @@ use Data::Dumper;
 
         my $self   = shift;
         my $key    = shift;
-        $DB::Signal = 1;
         my $bucket = $self->bucket;
         return unless $bucket;
         my $stream = $bucket->list;
@@ -223,7 +222,6 @@ sub _template_content {
       unless $self->bucket;
     my $object;
     try {
-        $DB::signal = 1;
         my $template_obj = $self->object( key => $template );
         my ( $data, $mod_date ); 
         if( $template_obj  ){
@@ -253,7 +251,7 @@ Template::Provider::Amazon::S3 - Enable template toolkit to use Amazon's S3 serv
 
 =head1 VERSION
 
-version 0.008
+version 0.009
 
 =head1 SYNOPSIS
 
